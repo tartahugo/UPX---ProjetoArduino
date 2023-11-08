@@ -2,13 +2,13 @@
 #include <WiFi.h>
 #define FIREBASE_HOST "your-firebase-host.firebaseio.com"
 #define FIREBASE_AUTH "your-auth-secret"
-#define WIFI_SSID "your-wifi-ssid"
-#define WIFI_PASSWORD "your-wifi-password"    
+#define WIFI_SSID
+#define WIFI_PASSWORD  
 #include "EmonLib.h" //adiciona a biblioteca
 EnergyMonitor emonl; //cria uma instância
 float ruido = 0.033; //Variável para ruído do sensor
 int tensao = 5; //Tensão usado no projeto
-#define LAMP 8
+#define LAMP 25
 
 
 int LDR;
@@ -16,24 +16,10 @@ int cont;
 int i;
 
 
-void setup()
-{
+void setup(){
   Serial.begin(115200);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) 
-  {
-    delay(500);
-    Serial.println("Connecting to WiFi...");
-  }
-  Serial.println("Connected to WiFi");
-  
- pinMode(LAMP,OUTPUT);
- digitalWrite(LAMP, HIGH);
-  
-   emonl.current(4, 10);
-    
-    
 }
+
 void loop()
 {
     
@@ -67,14 +53,14 @@ void loop()
   
   Serial.print("Corrente: ");
   Serial.print(Irms);
-  Serial.println(" A");
+  Serial.println(" mA");
   delay(500);
     
           
  LDR=0;
  for(i=0;i<=10;i++)
  {
- cont=analogRead(3);
+ cont=analogRead(13);
  LDR = LDR+cont;
  delay(10);
  }
