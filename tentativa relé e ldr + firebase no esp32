@@ -1,0 +1,73 @@
+#include "EmonLib.h" //adiciona a biblioteca
+EnergyMonitor emonl; //cria uma instância
+float ruido = 0.033; //Variável para ruído do sensor
+int tensao = 5; //Tensão usado no projeto
+#define LAMP 19//Define o LAMP como 8
+
+
+int LDR;//Variável para a leitura do LDR
+int cont;//Variável utilizada para armazenar os valores lidos pelo sensor
+int i;//Variável para contagem
+
+
+void setup()
+{
+  Serial.begin(9600);//Inicia a serial
+ pinMode(LAMP,OUTPUT);//Define o pino D8 como saída
+ digitalWrite(LAMP, HIGH);//Inicia em estado Lógico Alto, no caso, relé desligado
+  
+   emonl.current(4, 10);//Corrente: pino, calibração
+    
+    
+}
+void loop()
+{
+    
+  delay(1000);
+  
+  double Irms = emonl.calcIrms(1480); // calcula a corrente
+  Irms = (Irms - ruido) * 1000; // Tira o ruido      
+  
+  if (Irms < 0)
+    {
+        Irms = 0;
+    }  
+  
+  char ls = Serial.read();// variavel para ler oque vem da serial
+    
+  if (ls == 'R') // Se for R muda o estado do Relé
+    {
+        
+        digitalWrite(LAMP, !digitalRead(LAMP));   
+    }
+  
+  if (LDR > 600) //se a resistencia do ldr for maio que 600, comuta o relé
+    {
+        Serial.println("Luz Desligada");    
+    }
+  else if (LDR <= 600) // -- -- -- menor -- --, -- desligado.
+    {
+        Serial.println("Luz Ligada");
+    }
+    
+  
+  Serial.print("Corrente: ");
+  Serial.print(Irms);
+  Serial.println(" mA");
+  delay(500);
+    
+          
+ LDR=0;//Zera a variável LDR
+ for(i=0;i<=10;i++)//Faz 10 vezes a leitura do sensor 
+  {
+ cont=analogRead(15);//Lê o valor do sensor (LDR ligado ao pino A0) e guarda na variável LDR
+ LDR = LDR+cont;//Armazenamento na varíavel LDR o valor lido + o valor anterior
+ delay(10);//Delay se 10 milissegundos
+ }
+ LDR=LDR/10;//Divide o valor armazenado por 10
+ Serial.println(LDR);//Imprime o valor do LDR
+
+ (LDR >= 600) ? (digitalWrite(LAMP,HIGH)) : (digitalWrite(LAMP,LOW));
+//Se o valor lido (luminosidade) for maior ou igual a 400, liga a lâmpada, senão desliga a lâmpada
+  
+}
