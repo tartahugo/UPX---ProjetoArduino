@@ -2,7 +2,7 @@
 EnergyMonitor emonl; //cria uma instância
 float ruido = 0.033; //Variável para ruído do sensor
 int tensao = 5; //Tensão usado no projeto
-#define LAMP 27//Define o LAMP como 8
+#define LAMP 14//Define o LAMP como 8
 
 
 int LDR;//Variável para a leitura do LDR
