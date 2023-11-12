@@ -1,10 +1,10 @@
+#include <Arduino.h>
+#include <WiFi.h>
 #include "EmonLib.h" //adiciona a biblioteca
 EnergyMonitor emonl; //cria uma instância
 float ruido = 0.033; //Variável para ruído do sensor
 int tensao = 5; //Tensão usado no projeto
 #define LAMP 19//Define o LAMP como 8
-#include <Arduino.h>
-#include <WiFi.h>
 
 #include <Firebase_ESP_Client.h>
 
@@ -13,6 +13,8 @@ int tensao = 5; //Tensão usado no projeto
 
 // Provide the RTDB payload printing info and other helper functions.
 #include <addons/RTDBHelper.h>
+
+/* 1. Define the WiFi credentials */
 #define WIFI_SSID "Rodneyjade_2G"
 #define WIFI_PASSWORD "h2127hugo"
 
@@ -26,6 +28,10 @@ int tensao = 5; //Tensão usado no projeto
 #define USER_EMAIL "hugoewada@hotmail.com"
 #define USER_PASSWORD "123456789"
 
+int LDR;//Variável para a leitura do LDR
+int cont;//Variável utilizada para armazenar os valores lidos pelo sensor
+int i;//Variável para contagem
+
 // Define Firebase Data object
 FirebaseData fbdo;
 
@@ -36,22 +42,14 @@ unsigned long sendDataPrevMillis = 0;
 
 unsigned long count = 0;
 
-
-
-int LDR;//Variável para a leitura do LDR
-int cont;//Variável utilizada para armazenar os valores lidos pelo sensor
-int i;//Variável para contagem
-
-
 void setup()
 {
-  Serial.begin(115200);//Inicia a serial
- pinMode(LAMP,OUTPUT);//Define o pino D8 como saída
+
+  Serial.begin(115200);
+  pinMode(LAMP,OUTPUT);//Define o pino D8 como saída
  digitalWrite(LAMP, HIGH);//Inicia em estado Lógico Alto, no caso, relé desligado
   
    emonl.current(4, 10);//Corrente: pino, calibração
-
-  Serial.begin(115200);
 
 #if defined(ARDUINO_RASPBERRY_PI_PICO_W)
   multi.addAP(WIFI_SSID, WIFI_PASSWORD);
@@ -66,10 +64,7 @@ void setup()
   {
     Serial.print(".");
     delay(300);
-#if defined(ARDUINO_RASPBERRY_PI_PICO_W)
-    if (millis() - ms > 10000)
-      break;
-#endif
+
   }
   Serial.println();
   Serial.print("Connected with IP: ");
@@ -105,12 +100,14 @@ void setup()
   Firebase.setDoubleDigits(5);
 
   config.timeout.serverResponse = 10 * 1000;
-       
+
+  
 }
+
 void loop()
 {
-    
-  delay(1000);
+
+   delay(1000);
   
   double Irms = emonl.calcIrms(1480); // calcula a corrente
   Irms = (Irms - ruido) * 1000; // Tira o ruido      
@@ -155,9 +152,10 @@ void loop()
  Serial.println(LDR);//Imprime o valor do LDR
 
  (LDR >= 600) ? (digitalWrite(LAMP,HIGH)) : (digitalWrite(LAMP,LOW));
-//Se o valor lido (luminosidade) for maior ou igual a 400, liga a lâmpada, senão desliga a lâmpada
 
-if (Firebase.ready() && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMillis == 0))
+  // Firebase.ready() should be called repeatedly to handle authentication tasks.
+
+  if (Firebase.ready() && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMillis == 0))
   {
     sendDataPrevMillis = millis();
 
@@ -168,24 +166,17 @@ if (Firebase.ready() && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMi
     bool bVal;
     Serial.printf("Get bool ref... %s\n", Firebase.RTDB.getBool(&fbdo, F("/test/bool"), &bVal) ? bVal ? "true" : "false" : fbdo.errorReason().c_str());
 
-    Serial.printf("Set int... %s\n", Firebase.RTDB.setInt(&fbdo, F("/test/int"), count) ? "ok" : fbdo.errorReason().c_str());
+    Serial.printf("Set int... %s\n", Firebase.RTDB.setInt(&fbdo, F("/test/int"), LDR) ? "ok" : fbdo.errorReason().c_str());
 
     Serial.printf("Get int... %s\n", Firebase.RTDB.getInt(&fbdo, F("/test/int")) ? String(fbdo.to<int>()).c_str() : fbdo.errorReason().c_str());
 
     int iVal = 0;
     Serial.printf("Get int ref... %s\n", Firebase.RTDB.getInt(&fbdo, F("/test/int"), &iVal) ? String(iVal).c_str() : fbdo.errorReason().c_str());
 
-    Serial.printf("Set float... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/test/float"), count + 10.2) ? "ok" : fbdo.errorReason().c_str());
+    Serial.printf("Set float... %s\n", Firebase.RTDB.setFloat(&fbdo, F("/test/float"), Irms) ? "ok" : fbdo.errorReason().c_str());
 
     Serial.printf("Get float... %s\n", Firebase.RTDB.getFloat(&fbdo, F("/test/float")) ? String(fbdo.to<float>()).c_str() : fbdo.errorReason().c_str());
 
-    Serial.printf("Set double... %s\n", Firebase.RTDB.setDouble(&fbdo, F("/test/double"), count + 35.517549723765) ? "ok" : fbdo.errorReason().c_str());
-
-    Serial.printf("Get double... %s\n", Firebase.RTDB.getDouble(&fbdo, F("/test/double")) ? String(fbdo.to<double>()).c_str() : fbdo.errorReason().c_str());
-
-    Serial.printf("Set string... %s\n", Firebase.RTDB.setString(&fbdo, F("/test/string"), F("Hello World!")) ? "ok" : fbdo.errorReason().c_str());
-
-    Serial.printf("Get string... %s\n", Firebase.RTDB.getString(&fbdo, F("/test/string")) ? fbdo.to<const char *>() : fbdo.errorReason().c_str());
 
     // For the usage of FirebaseJson, see examples/FirebaseJson/BasicUsage/Create_Edit_Parse.ino
     FirebaseJson json;
@@ -205,6 +196,4 @@ if (Firebase.ready() && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMi
     Serial.println();
     count++;
   }
-
-  
 }
