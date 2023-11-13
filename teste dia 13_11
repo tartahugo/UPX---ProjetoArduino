@@ -1,0 +1,100 @@
+#include "EmonLib.h" //adiciona a biblioteca
+#include<Firebase_ESP_Client.h>
+#include "addons/TokenHelper.h"
+#include "addons/RTDBHelper.h"
+#include <WiFi.h>
+#define WIFI_SSID "Rodneyjade_2G"
+#define WIFI_PASSWORD "h2127hugo"
+#define API_KEY "AIzaSyCelstr8Hy7YDDn_xX8Io8MiqAwyC82mHE"
+#define DATABASE_URL "upxx-df824-default-rtdb.firebaseio.com"
+EnergyMonitor emonl; //cria uma instância
+float ruido = 0.033; //Variável para ruído do sensor
+int tensao = 5; //Tensão usado no projeto
+#define LAMP 19//Define o LAMP como 19
+#define LDRpin 15
+
+FirebaseData fbdo;
+FirebaseAuth auth;
+FirebaseConfig config;
+
+unsigned long sendDataPrevMillis = 0;
+bool signupOK = false;
+int ldrData;
+float corrente = 0.0;
+int LDR;//Variável para a leitura do LDR
+int cont;//Variável utilizada para armazenar os valores lidos pelo sensor
+int i;//Variável para contagem
+
+
+void setup()
+{
+  Serial.begin(115200);//Inicia a serial
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to Wi-Fi");
+  while(WiFi.status()!= WL_CONNECTED){
+    Serial.print(".");delay(300);
+  }
+
+  Serial.println();
+  Serial.print("Connected with IP: ");
+  Serial.println(WiFi.localIP());
+  Serial.println();
+
+  config.api_key = API_KEY;
+  config.database_url= DATABASE_URL;
+  if(Firebase.signUp(&config, &auth,"","")){
+   Serial.println("signUp OK");
+   signupOK = true;
+  }
+else{
+  Serial.printf("%s\n", config.signer.signupError.message.c_str());
+}
+
+config.token_status_callback = tokenStatusCallback;
+Firebase.begin(&config, &auth);
+Firebase.reconnectWiFi(true);
+ pinMode(LAMP,OUTPUT);//Define o pino D8 como saída
+ digitalWrite(LAMP, HIGH);//Inicia em estado Lógico Alto, no caso, relé desligado
+  
+   emonl.current(4, 10);//Corrente: pino, calibração
+    
+    
+}
+void loop()
+{
+    if(Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 5000 || sendDataPrevMillis == 0 )){
+  sendDataPrevMillis = millis();
+  ldrData=0
+   double Irms = emonl.calcIrms(1480); // calcula a corrente
+  Irms = (Irms - ruido) * 1000; // Tira o ruido      
+  corrente = analogRead(4);
+  for(i=0;i<=10;i++)//Faz 10 vezes a leitura do sensor 
+  {
+ cont=analogRead(15);//Lê o valor do sensor (LDR ligado ao pino A0) e guarda na variável LDR
+ ldrData = ldrData+cont;//Armazenamento na varíavel LDR o valor lido + o valor anterior
+ delay(10);//Delay se 10 milissegundos
+ }
+ ldrData=ldrData/10;//Divide o valor armazenado por 10
+  if(Firebase.RTDB.setInt(&fbdo, "Sensor/ldr_data", ldrData)){
+
+  Serial.println(); Serial.print(ldrData);
+  Serial.print(" - salvo com sucesso em: " + fbdo.dataPath());
+  Serial.println("("+fbdo.dataType()+")");
+  }else{
+    Serial.println("FALHOU: " + fbdo.errorReason());
+  }
+
+  if(Firebase.RTDB.setFloat(&fbdo, "Sensor/corrente", corrente)){
+
+  Serial.println(); Serial.print(corrente);
+  Serial.print(" - salvo com sucesso em: " + fbdo.dataPath());
+  Serial.println("("+fbdo.dataType()+")");
+  }else{
+    Serial.println("FALHOU: " + fbdo.errorReason());
+  }
+
+  }
+
+
+    }
+  
