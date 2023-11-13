@@ -57,14 +57,16 @@ Firebase.reconnectWiFi(true);
  pinMode(LAMP,OUTPUT);//Define o pino D8 como saída
  digitalWrite(LAMP, HIGH);//Inicia em estado Lógico Alto, no caso, relé desligado
   
-   emonl.current(4, 10);//Corrente: pino, calibração
+   emonl.current(32, 10);//Corrente: pino, calibração
     
     
 }
 void loop()
 {
- if(Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 5000 || sendDataPrevMillis == 0 )){
+ if(Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 1000 || sendDataPrevMillis == 0 )){
   sendDataPrevMillis = millis();
+  double Irms = emonl.calcIrms(1480); // calcula a corrente
+  Irms = (Irms - ruido) * 1000; // Tira o ruido   
   LDR = analogRead(33);//krl sinal analógico no esp32 que usa wifi precisa ser nos pinos adc1, se for nos adcs2 n vai kk
   if(Firebase.RTDB.setInt(&fbdo, "Sensor/ldr_data", LDR)){
 
@@ -75,9 +77,9 @@ void loop()
     Serial.println("FALHOU: " + fbdo.errorReason());
   }
 
-  if(Firebase.RTDB.setFloat(&fbdo, "Sensor/corrente", corrente)){
+  if(Firebase.RTDB.setFloat(&fbdo, "Sensor/corrente", Irms)){
 
-  Serial.println(); Serial.print(corrente);
+  Serial.println(); Serial.print(Irms);
   Serial.print(" - salvo com sucesso em: " + fbdo.dataPath());
   Serial.println("("+fbdo.dataType()+")");
   }else{
