@@ -7,8 +7,8 @@ int tensao = 5; //Tensão usado no projeto
 #include "addons/TokenHelper.h"
 #include "addons/RTDBHelper.h"
 #include <WiFi.h>
-#define WIFI_SSID "Rodneyjade_2G"
-#define WIFI_PASSWORD "h2127hugo"
+#define WIFI_SSID "hugo"
+#define WIFI_PASSWORD "12345678"
 #define API_KEY "AIzaSyCelstr8Hy7YDDn_xX8Io8MiqAwyC82mHE"
 #define DATABASE_URL "upxx-df824-default-rtdb.firebaseio.com"
 FirebaseData fbdo;
