@@ -8,8 +8,10 @@ float ruido = 0.033; //Variável para ruído do sensor
 #include <WiFi.h>
 #define WIFI_SSID "hugo"
 #define WIFI_PASSWORD "12345678"
-#define API_KEY "AIzaSyCelstr8Hy7YDDn_xX8Io8MiqAwyC82mHE"
-#define DATABASE_URL "upxx-df824-default-rtdb.firebaseio.com"
+#define API_KEY "AIzaSyBkKx0yg2M3_6Wg5iNzKnCkcKY_6uOpisY"
+#define DATABASE_URL "projeto-upx-facens-default-rtdb.firebaseio.com"
+#define USER_EMAIL "hugoewada@gmail.com"
+#define USER_PASSWORD "123456789"
 FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
@@ -42,13 +44,8 @@ void setup()
 
   config.api_key = API_KEY;
   config.database_url= DATABASE_URL;
-  if(Firebase.signUp(&config, &auth,"","")){
-   Serial.println("signUp OK");
-   signupOK = true;
-  }
-else{
-  Serial.printf("%s\n", config.signer.signupError.message.c_str());
-}
+  auth.user.email = USER_EMAIL;
+  auth.user.password = USER_PASSWORD;
 
 config.token_status_callback = tokenStatusCallback;
 Firebase.begin(&config, &auth);
@@ -62,7 +59,7 @@ Firebase.reconnectWiFi(true);
 }
 void loop()
 {
- if(Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 1000 || sendDataPrevMillis == 0 )){
+ if(Firebase.ready() && (millis() - sendDataPrevMillis > 10000 || sendDataPrevMillis == 0 )){
   sendDataPrevMillis = millis();
   double Irms = emonl.calcIrms(1480); // calcula a corrente
   Irms = (Irms - ruido) * 1000; // Tira o ruido   
